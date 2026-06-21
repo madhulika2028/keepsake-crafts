@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Reveal } from "@/components/framely/Reveal";
 import { SiteHeader } from "@/components/framely/SiteHeader";
 import { SiteFooter } from "@/components/framely/SiteFooter";
+import { OccasionCard } from "@/components/framely/OccasionCard";
+import { TrustBadges } from "@/components/framely/TrustBadges";
+import { FAQ } from "@/components/framely/FAQ";
 import {
   PRODUCTS,
   OCCASIONS,
@@ -34,13 +36,16 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: heroCollage },
       { name: "twitter:image", content: heroCollage },
     ],
+    links: [
+      { rel: "preload", as: "image", href: heroCollage, fetchpriority: "high" },
+    ],
   }),
   component: Home,
 });
 
 function Home() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <SiteHeader />
       <main>
         <Hero />
@@ -53,6 +58,8 @@ function Home() {
         <EmotionalBrand />
         <Audience />
         <Testimonials />
+        <TrustBadges />
+        <FAQ />
         <FinalCTA />
       </main>
       <SiteFooter />
@@ -64,10 +71,10 @@ function Home() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="container-page grid items-center gap-12 pt-12 pb-16 md:grid-cols-2 md:pt-20 md:pb-24">
+      <div className="container-page grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
         <div className="animate-fade-up">
           <span className="eyebrow">Personalized Gifting Studio · Tirupati</span>
-          <h1 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight text-foreground md:text-6xl">
+          <h1 className="mt-4 text-[2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-6xl">
             Turn your memories
             <br />
             into gifts you can{" "}
@@ -77,44 +84,46 @@ function Hero() {
             </span>
             .
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
             Upload your favorite photos and create personalized frames, mugs, T-shirts, polaroid prints, memory books and custom gifts — designed with love, printed in premium quality.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link to="/customize" className="btn-cta">
-              Customize Your Gift <ArrowRight className="h-4 w-4" />
+              Customize Your Gift <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <a href="#products" className="btn-ghost">Explore Products</a>
           </div>
-          <ul className="mt-8 grid max-w-lg grid-cols-2 gap-3 text-sm text-muted-foreground">
+          <ul className="mt-7 grid max-w-lg grid-cols-2 gap-3 text-sm text-muted-foreground">
             {["Easy photo upload", "Live preview", "Premium printing", "Perfect for any occasion"].map((t) => (
               <li key={t} className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-accent" /> {t}
+                <Check className="h-4 w-4 text-accent" aria-hidden="true" /> {t}
               </li>
             ))}
           </ul>
         </div>
 
         <div className="relative animate-fade-up" style={{ animationDelay: "120ms" }}>
-          <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-rose/30 via-beige to-ivory blur-xl opacity-70" />
-          <div className="overflow-hidden rounded-[2rem] border border-border shadow-soft animate-float">
+          <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-rose/30 via-beige to-ivory blur-xl opacity-70" aria-hidden="true" />
+          <div className="relative overflow-hidden rounded-[2rem] border border-border shadow-soft animate-float aspect-[4/5] md:aspect-[5/6]">
             <img
               src={heroCollage}
-              alt="A premium flat-lay of personalized Framely gifts: wooden photo frame, polaroid prints, custom mug and memory book on cream linen."
+              alt="Premium flat-lay of personalized Framely gifts: wooden photo frame, polaroid prints, custom mug and memory book on cream linen."
               width={1536}
               height={1280}
-              className="h-auto w-full object-cover"
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-[center_top] md:object-center"
             />
           </div>
           <div className="absolute -bottom-5 -left-5 hidden rounded-2xl border border-border bg-card px-4 py-3 shadow-soft md:flex md:items-center md:gap-3">
-            <Heart className="h-5 w-5 text-accent" />
+            <Heart className="h-5 w-5 text-accent" aria-hidden="true" />
             <div className="text-sm">
               <p className="font-semibold leading-tight">2,400+ memories</p>
               <p className="text-muted-foreground">crafted and gifted</p>
             </div>
           </div>
           <div className="absolute -top-4 right-4 hidden rounded-2xl border border-border bg-card px-4 py-2 shadow-soft md:flex md:items-center md:gap-2">
-            <Star className="h-4 w-4 fill-accent text-accent" />
+            <Star className="h-4 w-4 fill-accent text-accent" aria-hidden="true" />
             <span className="text-sm font-medium">4.9 / 5 · 850 reviews</span>
           </div>
         </div>
@@ -129,7 +138,7 @@ function TrustStrip() {
     <div className="border-y border-border bg-secondary/40">
       <div className="container-page flex flex-wrap items-center justify-center gap-x-10 gap-y-3 py-4 text-xs uppercase tracking-[0.18em] text-muted-foreground">
         {items.map((i) => (
-          <span key={i} className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-accent" /> {i}</span>
+          <span key={i} className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-accent" aria-hidden="true" /> {i}</span>
         ))}
       </div>
     </div>
@@ -158,6 +167,7 @@ function Products() {
                   width={768}
                   height={960}
                   loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover transition-transform duration-[900ms] group-hover:scale-105"
                 />
                 {p.badge && (
@@ -175,9 +185,9 @@ function Products() {
                 <Link
                   to="/customize"
                   search={{ product: p.id }}
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent"
+                  className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
                 >
-                  Customize Now <ArrowRight className="h-3.5 w-3.5" />
+                  Customize Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               </div>
             </article>
@@ -207,8 +217,8 @@ function HowItWorks() {
           {steps.map((s, i) => (
             <Reveal key={s.title} delay={i * 100}>
               <div className="card-soft hover-lift relative p-7">
-                <span className="absolute right-5 top-5 text-5xl font-semibold text-accent/15">0{i + 1}</span>
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-accent">
+                <span className="absolute right-5 top-5 text-5xl font-semibold text-accent/15" aria-hidden="true">0{i + 1}</span>
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-accent" aria-hidden="true">
                   <s.icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
@@ -218,7 +228,7 @@ function HowItWorks() {
           ))}
         </div>
         <div className="mt-10 text-center">
-          <Link to="/customize" className="btn-cta">Start Creating Now <ArrowRight className="h-4 w-4" /></Link>
+          <Link to="/customize" className="btn-cta">Start Creating Now <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
       </div>
     </section>
@@ -239,7 +249,7 @@ function Why() {
         {REASONS.map((r, i) => (
           <Reveal key={r.title} delay={i * 50}>
             <div className="card-soft hover-lift h-full p-6">
-              <div className="text-2xl">{r.icon}</div>
+              <div className="text-2xl" aria-hidden="true">{r.icon}</div>
               <h3 className="mt-4 text-base font-semibold">{r.title}</h3>
               <p className="mt-1.5 text-sm text-muted-foreground">{r.copy}</p>
             </div>
@@ -258,21 +268,20 @@ function Occasions() {
           <div className="mx-auto max-w-2xl text-center">
             <span className="eyebrow">Occasions</span>
             <h2 className="mt-3 text-3xl font-semibold md:text-5xl">Gifts for Every Special Moment</h2>
+            <p className="mt-4 text-muted-foreground">Pick the occasion and we'll suggest the perfect personalised gift.</p>
           </div>
         </Reveal>
-        <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           {OCCASIONS.map((o, i) => (
-            <Reveal key={o.label} delay={i * 50}>
-              <Link to="/customize" className="card-soft hover-lift block h-full p-5 text-left">
-                <div className="text-3xl">{o.icon}</div>
-                <h3 className="mt-3 text-sm font-semibold">{o.label}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{o.copy}</p>
+            <Reveal key={o.id} delay={i * 40}>
+              <Link to="/customize" search={{ occasion: o.id }} className="block h-full">
+                <OccasionCard occasion={o} />
               </Link>
             </Reveal>
           ))}
         </div>
         <div className="mt-10 text-center">
-          <Link to="/customize" className="btn-cta">Find the Perfect Gift <ArrowRight className="h-4 w-4" /></Link>
+          <Link to="/customize" className="btn-cta">Find the Perfect Gift <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
       </div>
     </section>
@@ -302,7 +311,7 @@ function Services() {
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {g.items.map((it) => (
                   <li key={it} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent" /> {it}
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> {it}
                   </li>
                 ))}
               </ul>
@@ -324,7 +333,7 @@ function EmotionalBrand() {
           <p className="mx-auto mt-5 max-w-2xl text-muted-foreground">
             Some photos deserve more than a place in your gallery. Framely helps you turn your favorite moments into meaningful keepsakes you can gift, frame, display and treasure forever.
           </p>
-          <Link to="/customize" className="btn-cta mt-7">Create a Memory Gift <ArrowRight className="h-4 w-4" /></Link>
+          <Link to="/customize" className="btn-cta mt-7">Create a Memory Gift <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
       </Reveal>
     </section>
@@ -369,9 +378,9 @@ function Testimonials() {
         {TESTIMONIALS.map((t, i) => (
           <Reveal key={t.name} delay={i * 80}>
             <figure className="card-soft hover-lift h-full p-7">
-              <div className="flex gap-0.5 text-accent">
+              <div className="flex gap-0.5 text-accent" aria-label="5 out of 5 stars">
                 {Array.from({ length: 5 }).map((_, k) => (
-                  <Star key={k} className="h-4 w-4 fill-current" />
+                  <Star key={k} className="h-4 w-4 fill-current" aria-hidden="true" />
                 ))}
               </div>
               <blockquote className="mt-4 text-sm leading-relaxed text-foreground">"{t.quote}"</blockquote>
@@ -392,13 +401,13 @@ function FinalCTA() {
     <section className="container-page py-20 md:py-28">
       <Reveal>
         <div className="relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-accent/15 via-beige to-card p-10 text-center md:p-16">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" aria-hidden="true" />
           <h2 className="text-3xl font-semibold leading-tight md:text-5xl">Ready to turn your photos into something beautiful?</h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Create a personalized gift that feels thoughtful, emotional and unforgettable.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link to="/customize" className="btn-cta">Start Customizing <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/customize" className="btn-cta">Start Customizing <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             <a href="#occasions" className="btn-ghost">View Gift Ideas</a>
           </div>
         </div>
@@ -411,14 +420,15 @@ function MobileStickyCTA() {
   return (
     <div className="fixed inset-x-0 bottom-3 z-40 mx-3 md:hidden">
       <div className="grid grid-cols-2 gap-2 rounded-full border border-border bg-background/85 p-1.5 shadow-lift backdrop-blur">
-        <Link to="/customize" className="btn-cta !py-3 text-sm">Customize</Link>
+        <Link to="/customize" className="btn-cta !py-3 text-sm" aria-label="Customize your gift">Customize</Link>
         <a
           href={whatsappOrderUrl("Hi Framely! I'd like to place an order.")}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground py-3 text-sm font-semibold text-background"
+          aria-label="Order on WhatsApp"
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-foreground py-3 text-sm font-semibold text-background"
         >
-          <MessageCircle className="h-4 w-4" /> WhatsApp
+          <MessageCircle className="h-4 w-4" aria-hidden="true" /> WhatsApp
         </a>
       </div>
     </div>
