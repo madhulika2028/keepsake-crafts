@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { Reveal } from "@/components/framely/Reveal";
 import { SiteHeader } from "@/components/framely/SiteHeader";
 import { SiteFooter } from "@/components/framely/SiteFooter";
 import { OccasionCard } from "@/components/framely/OccasionCard";
 import { TrustBadges } from "@/components/framely/TrustBadges";
 import { FAQ } from "@/components/framely/FAQ";
+import { HeroParticles } from "@/components/framely/HeroParticles";
+import { FloatingCheckout } from "@/components/framely/FloatingCheckout";
 import {
   PRODUCTS,
   OCCASIONS,
@@ -13,6 +16,8 @@ import {
   TESTIMONIALS,
   whatsappOrderUrl,
 } from "@/lib/framely-data";
+import { toggleWishlist, useStoreSnapshot } from "@/lib/store";
+import { toast } from "sonner";
 import heroCollage from "@/assets/hero-collage.jpg";
 import {
   ArrowRight,
@@ -64,14 +69,19 @@ function Home() {
       </main>
       <SiteFooter />
       <MobileStickyCTA />
+      <FloatingCheckout />
     </div>
   );
 }
 
+
+
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="container-page grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
+      <HeroParticles />
+      <div className="container-page relative grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
+
         <div className="animate-fade-up">
           <span className="eyebrow">Personalized Gifting Studio · Tirupati</span>
           <h1 className="mt-4 text-[2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-6xl">
