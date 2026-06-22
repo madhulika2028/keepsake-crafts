@@ -276,7 +276,7 @@ function Customize() {
 
             {/* STEP 2 — Options */}
             {step === 2 && showOptions && (
-              <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.05fr]">
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
                 <PreviewPanel c={c} />
                 <div>
                   <OptionsPicker
@@ -296,7 +296,7 @@ function Customize() {
 
             {/* STEP 3 — Upload + Live preview */}
             {step === 3 && (
-              <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.05fr]">
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
                 <div className="space-y-6">
                   <MultiPhotoUpload
                     photos={c.photos}
@@ -356,7 +356,7 @@ function Customize() {
 
             {/* STEP 4 — Preview & summary */}
             {step === 4 && (
-              <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
                 <PreviewPanel c={c} />
                 <div className="space-y-4">
                   <div className="card-soft p-6">
