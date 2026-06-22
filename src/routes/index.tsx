@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { Reveal } from "@/components/framely/Reveal";
 import { SiteHeader } from "@/components/framely/SiteHeader";
 import { SiteFooter } from "@/components/framely/SiteFooter";
 import { OccasionCard } from "@/components/framely/OccasionCard";
 import { TrustBadges } from "@/components/framely/TrustBadges";
 import { FAQ } from "@/components/framely/FAQ";
+import { HeroParticles } from "@/components/framely/HeroParticles";
+import { FloatingCheckout } from "@/components/framely/FloatingCheckout";
 import {
   PRODUCTS,
   OCCASIONS,
@@ -13,6 +16,8 @@ import {
   TESTIMONIALS,
   whatsappOrderUrl,
 } from "@/lib/framely-data";
+import { toggleWishlist, useStoreSnapshot } from "@/lib/store";
+import { toast } from "sonner";
 import heroCollage from "@/assets/hero-collage.jpg";
 import {
   ArrowRight,
@@ -37,7 +42,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:image", content: heroCollage },
     ],
     links: [
-      { rel: "preload", as: "image", href: heroCollage, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: heroCollage, fetchPriority: "high" },
     ],
   }),
   component: Home,
@@ -64,14 +69,19 @@ function Home() {
       </main>
       <SiteFooter />
       <MobileStickyCTA />
+      <FloatingCheckout />
     </div>
   );
 }
 
+
+
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="container-page grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
+      <HeroParticles />
+      <div className="container-page relative grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
+
         <div className="animate-fade-up">
           <span className="eyebrow">Personalized Gifting Studio · Tirupati</span>
           <h1 className="mt-4 text-[2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-6xl">
@@ -146,6 +156,7 @@ function TrustStrip() {
 }
 
 function Products() {
+  const { wishlist } = useStoreSnapshot();
   return (
     <section id="products" className="container-page py-20 md:py-28">
       <Reveal>
@@ -157,46 +168,67 @@ function Products() {
       </Reveal>
 
       <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {PRODUCTS.map((p, i) => (
-          <Reveal key={p.id} delay={i * 60}>
-            <article className="card-soft group hover-lift overflow-hidden">
-              <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-                <img
-                  src={p.image}
-                  alt={`${p.name} — ${p.tagline}`}
-                  width={768}
-                  height={960}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover transition-transform duration-[900ms] group-hover:scale-105"
-                />
-                {p.badge && (
-                  <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent backdrop-blur">
-                    {p.badge}
-                  </span>
-                )}
-              </div>
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-base font-semibold leading-tight">{p.name}</h3>
-                  <span className="text-sm font-semibold text-accent">{p.price}</span>
+        {PRODUCTS.map((p, i) => {
+          const wished = wishlist.includes(p.id);
+          return (
+            <Reveal key={p.id} delay={i * 60}>
+              <motion.article
+                whileHover={{ y: -8 }}
+                transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                className="card-soft group overflow-hidden"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
+                  <img
+                    src={p.image}
+                    alt={`${p.name} — ${p.tagline}`}
+                    width={768}
+                    height={960}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
+                  />
+                  {p.badge && (
+                    <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent backdrop-blur">
+                      {p.badge}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-label={wished ? `Remove ${p.name} from wishlist` : `Add ${p.name} to wishlist`}
+                    onClick={() => {
+                      const on = toggleWishlist(p.id);
+                      toast.success(on ? "Saved to wishlist" : "Removed from wishlist");
+                    }}
+                    className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full backdrop-blur transition ${
+                      wished ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-card"
+                    }`}
+                  >
+                    <Heart className={`h-4 w-4 ${wished ? "fill-current" : ""}`} aria-hidden="true" />
+                  </button>
                 </div>
-                <p className="mt-1.5 text-sm text-muted-foreground">{p.tagline}</p>
-                <Link
-                  to="/customize"
-                  search={{ product: p.id }}
-                  className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
-                >
-                  Customize Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
-              </div>
-            </article>
-          </Reveal>
-        ))}
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-semibold leading-tight">{p.name}</h3>
+                    <span className="text-sm font-semibold text-accent">{p.price}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{p.tagline}</p>
+                  <Link
+                    to="/customize"
+                    search={{ product: p.id }}
+                    className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
+                  >
+                    Customize Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              </motion.article>
+            </Reveal>
+          );
+        })}
       </div>
     </section>
   );
 }
+
 
 function HowItWorks() {
   const steps = [

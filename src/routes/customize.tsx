@@ -1,15 +1,29 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PRODUCTS, OCCASIONS, whatsappOrderUrl, type FramelyProduct } from "@/lib/framely-data";
+import { PRODUCTS, OCCASIONS, whatsappOrderUrl } from "@/lib/framely-data";
+import {
+  newCustomization,
+  hasOptionsStep,
+  optionsValid,
+  requiredPhotoCount,
+  summarizeOptions,
+  priceFor,
+  type Customization,
+} from "@/lib/customization-rules";
+import { addToCart } from "@/lib/store";
 import { SiteHeader } from "@/components/framely/SiteHeader";
 import { SiteFooter } from "@/components/framely/SiteFooter";
 import { OccasionCard } from "@/components/framely/OccasionCard";
 import { Stepper } from "@/components/framely/Stepper";
-import { LiveMockup, makeDefaultMockup, type MockupState } from "@/components/framely/LiveMockup";
-import { ArrowLeft, ArrowRight, Upload, MessageCircle, Save, Sparkles } from "lucide-react";
+import { ProductPreview } from "@/components/framely/ProductPreview";
+import { OptionsPicker } from "@/components/framely/OptionsPicker";
+import { MultiPhotoUpload } from "@/components/framely/MultiPhotoUpload";
+import { SuccessModal } from "@/components/framely/SuccessModal";
+import { ArrowLeft, ArrowRight, MessageCircle, Save, Sparkles, ShoppingBag, Heart } from "lucide-react";
 
 const search = z.object({
   product: z.string().optional(),
@@ -22,76 +36,70 @@ export const Route = createFileRoute("/customize")({
   head: () => ({
     meta: [
       { title: "Customize Your Gift — Framely Studio" },
-      { name: "description", content: "Upload your photo, pick a product, add your details and preview your personalized gift live before ordering on WhatsApp." },
+      { name: "description", content: "Live preview, strict photo rules and instant WhatsApp ordering for every Framely product." },
     ],
   }),
   component: Customize,
 });
 
-type Customization = {
-  productId: string;
-  occasionId: string;
-  photoDataUrl: string | null;
-  title: string;
-  subtitle: string;
-  date: string;
-  quantity: number;
-  mockup: MockupState;
-};
-
 const STEPS = [
   { id: "occasion", label: "Occasion" },
   { id: "product", label: "Product" },
-  { id: "customize", label: "Customize" },
+  { id: "options", label: "Options" },
+  { id: "upload", label: "Upload" },
   { id: "preview", label: "Preview" },
-  { id: "checkout", label: "Order" },
+  { id: "order", label: "Order" },
 ];
-
-function buildDefault(productId: string, occasionId?: string): Customization {
-  const product = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
-  return {
-    productId: product.id,
-    occasionId: occasionId ?? "birthday",
-    photoDataUrl: null,
-    title: "",
-    subtitle: "",
-    date: "",
-    quantity: 1,
-    mockup: makeDefaultMockup(product),
-  };
-}
 
 function Customize() {
   const navigate = useNavigate();
   const { product: productParam, design: designParam, occasion: occasionParam } = Route.useSearch();
-  const initial = useMemo<Customization>(
-    () => buildDefault(productParam ?? "wood-frame", occasionParam),
-    [productParam, occasionParam],
-  );
+
+  const initial = useMemo<Customization>(() => {
+    const p = PRODUCTS.find((x) => x.id === productParam) ?? PRODUCTS[0];
+    return newCustomization(p, occasionParam ?? "birthday");
+  }, [productParam, occasionParam]);
+
   const [c, setC] = useState<Customization>(initial);
-  const [step, setStep] = useState(occasionParam || productParam ? 2 : 0);
+  // Determine the initial step from URL: product param skips to options (if any) or upload.
+  const initialStep = productParam
+    ? (hasOptionsStep(productParam) ? 2 : 3)
+    : occasionParam ? 1 : 0;
+  const [step, setStep] = useState(initialStep);
+
   const [name, setName] = useState("");
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loadingDesign, setLoadingDesign] = useState(!!designParam);
+  const [success, setSuccess] = useState<null | "cart" | "save">(null);
 
-  // Persist across reloads
+  const product = PRODUCTS.find((p) => p.id === c.productId) ?? PRODUCTS[0];
+  const occasion = OCCASIONS.find((o) => o.id === c.occasionId);
+  const showOptions = hasOptionsStep(c.productId);
+  const required = requiredPhotoCount(c.productId, c.options);
+  const photosComplete = required != null && c.photos.length === required;
+  const priceStr = priceFor(c.productId, c.options, c.quantity);
+
+  // Restore draft / auth — only when no URL params are pre-selecting a product.
   useEffect(() => {
-    if (designParam) return;
+    if (designParam || productParam) return;
     try {
       const raw = sessionStorage.getItem("framely:draft");
       if (raw) {
         const draft = JSON.parse(raw) as Customization;
         setC((prev) => ({ ...prev, ...draft }));
       }
-    } catch {/* ignore */}
+    } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    try { sessionStorage.setItem("framely:draft", JSON.stringify(c)); } catch {/* ignore */}
+    try { sessionStorage.setItem("framely:draft", JSON.stringify(c)); } catch { /* ignore */ }
   }, [c]);
 
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ? { id: data.user.id, email: data.user.email ?? undefined } : null));
+    supabase.auth.getUser().then(({ data }) =>
+      setUser(data.user ? { id: data.user.id, email: data.user.email ?? undefined } : null),
+    );
     const { data } = supabase.auth.onAuthStateChange((_e, s) =>
       setUser(s?.user ? { id: s.user.id, email: s.user.email ?? undefined } : null),
     );
@@ -104,50 +112,59 @@ function Customize() {
       const { data, error } = await supabase.from("saved_designs").select("*").eq("id", designParam).maybeSingle();
       if (data && !error) {
         const cust = data.customization as Customization;
-        const product = PRODUCTS.find((p) => p.id === data.product_id) ?? PRODUCTS[0];
-        setC({ ...buildDefault(product.id), ...cust, productId: data.product_id });
+        setC({ ...newCustomization(PRODUCTS.find((p) => p.id === data.product_id) ?? PRODUCTS[0]), ...cust });
         setName(data.name);
-        setStep(2);
+        setStep(3);
       }
       setLoadingDesign(false);
     })();
   }, [designParam]);
 
-  const product = PRODUCTS.find((p) => p.id === c.productId) ?? PRODUCTS[0];
-  const occasion = OCCASIONS.find((o) => o.id === c.occasionId);
-
-  const onPhoto = (file: File) => {
-    if (file.size > 6 * 1024 * 1024) {
-      toast.error("Photo is too large. Please pick one under 6MB.");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result);
-      // reset transform so canvas re-centers
-      setC((s) => ({ ...s, photoDataUrl: dataUrl, mockup: makeDefaultMockup(product) }));
-      toast.success("Photo uploaded — drag it on the preview to position.");
-    };
-    reader.readAsDataURL(file);
+  // Skip options step if not applicable
+  const goNext = () => {
+    setStep((s) => {
+      let next = Math.min(STEPS.length - 1, s + 1);
+      if (next === 2 && !showOptions) next = 3;
+      return next;
+    });
+  };
+  const goPrev = () => {
+    setStep((s) => {
+      let prev = Math.max(0, s - 1);
+      if (prev === 2 && !showOptions) prev = 1;
+      return prev;
+    });
   };
 
+  const canAdvanceFromOptions = optionsValid(c.productId, c.options);
   const orderMessage = () => {
     const lines = [
       `Hi Framely! I'd like to order a ${product.name}.`,
       occasion && `Occasion: ${occasion.label}`,
+      ...summarizeOptions(c.productId, c.options),
       c.title && `Title / Names: ${c.title}`,
       c.subtitle && `Message: ${c.subtitle}`,
       c.date && `Date: ${c.date}`,
-      c.mockup.colorId && `Color: ${c.mockup.colorId}`,
       `Quantity: ${c.quantity}`,
-      `Price (est.): ${product.price}`,
-      c.photoDataUrl ? "(I'll share the photo on WhatsApp.)" : "",
+      `Estimated price: ${priceStr}`,
+      c.photos.length ? `(I'll share ${c.photos.length} photo${c.photos.length === 1 ? "" : "s"} on WhatsApp.)` : "",
     ].filter(Boolean);
     return lines.join("\n");
+  };
+
+  const handleAddToCart = () => {
+    if (!photosComplete) {
+      toast.error(`Add ${required ?? "the required"} photos first.`);
+      return;
+    }
+    addToCart({
+      productId: product.id,
+      productName: product.name,
+      price: priceStr,
+      thumbnail: c.photos[0] ?? null,
+      customization: c,
+    });
+    setSuccess("cart");
   };
 
   const saveDesign = async () => {
@@ -163,16 +180,13 @@ function Customize() {
       product_id: product.id,
       product_name: product.name,
       customization: c,
-      preview_image: c.photoDataUrl,
+      preview_image: c.photos[0] ?? null,
     };
     const { error } = designParam
       ? await supabase.from("saved_designs").update(payload).eq("id", designParam)
       : await supabase.from("saved_designs").insert(payload);
     if (error) toast.error(error.message);
-    else {
-      toast.success("Design saved");
-      navigate({ to: "/designs" });
-    }
+    else setSuccess("save");
   };
 
   if (loadingDesign) {
@@ -183,9 +197,6 @@ function Customize() {
       </div>
     );
   }
-
-  const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
-  const prev = () => setStep((s) => Math.max(0, s - 1));
 
   return (
     <div className="min-h-dvh">
@@ -207,216 +218,237 @@ function Customize() {
           <Stepper steps={STEPS} current={step} onJump={(i) => setStep(i)} />
         </div>
 
-        {/* STEP 0 — Occasion */}
-        {step === 0 && (
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold">Choose the occasion</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Helps us suggest layouts and messaging that fit.</p>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-              {OCCASIONS.map((o) => (
-                <OccasionCard
-                  key={o.id}
-                  occasion={o}
-                  selected={c.occasionId === o.id}
-                  onSelect={(id) => setC((s) => ({ ...s, occasionId: id }))}
-                />
-              ))}
-            </div>
-            <StepNav onNext={next} nextLabel="Continue to products" />
-          </section>
-        )}
-
-        {/* STEP 1 — Product */}
-        {step === 1 && (
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold">Pick your product</h2>
-            <p className="mt-1 text-sm text-muted-foreground">You can change this anytime — your design carries over.</p>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {PRODUCTS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setC((s) => ({ ...s, productId: p.id, mockup: makeDefaultMockup(p) }))}
-                  aria-pressed={c.productId === p.id}
-                  className={`overflow-hidden rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                    c.productId === p.id ? "border-accent shadow-lift" : "border-border hover:border-foreground/30"
-                  }`}
-                >
-                  <img src={p.image} alt={p.name} width={400} height={400} loading="lazy" decoding="async" className="aspect-square w-full object-cover" />
-                  <div className="p-3">
-                    <p className="truncate text-sm font-semibold">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.price}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <StepNav onBack={prev} onNext={next} nextLabel="Start customizing" />
-          </section>
-        )}
-
-        {/* STEP 2 — Customize (split layout) */}
-        {step === 2 && (
-          <section className="mt-8 grid gap-8 lg:grid-cols-[1.05fr_1fr]">
-            <div>
-              <div className="card-soft sticky top-24 overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Sparkles className="h-4 w-4 text-accent" aria-hidden="true" /> Live preview
-                  </div>
-                  <span className="text-xs text-muted-foreground">{product.name}</span>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* STEP 0 — Occasion */}
+            {step === 0 && (
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold">Choose the occasion</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Helps us suggest layouts and messaging that fit.</p>
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+                  {OCCASIONS.map((o) => (
+                    <OccasionCard
+                      key={o.id}
+                      occasion={o}
+                      selected={c.occasionId === o.id}
+                      onSelect={(id) => setC((s) => ({ ...s, occasionId: id }))}
+                    />
+                  ))}
                 </div>
-                <div className="p-4 md:p-6">
-                  <LiveMockup
-                    product={product}
-                    photoDataUrl={c.photoDataUrl}
-                    state={c.mockup}
-                    onChange={(m) => setC((s) => ({ ...s, mockup: m }))}
-                    text={c.title}
+                <StepNav onNext={goNext} nextLabel="Continue to products" />
+              </section>
+            )}
+
+            {/* STEP 1 — Product */}
+            {step === 1 && (
+              <section className="mt-8">
+                <h2 className="text-lg font-semibold">Pick your product</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Selecting a different product resets photos and options.</p>
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {PRODUCTS.map((p) => (
+                    <motion.button
+                      key={p.id}
+                      whileHover={{ y: -6 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setC(() => newCustomization(p, c.occasionId))}
+                      aria-pressed={c.productId === p.id}
+                      className={`overflow-hidden rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
+                        c.productId === p.id ? "border-accent shadow-lift" : "border-border hover:border-foreground/30"
+                      }`}
+                    >
+                      <img src={p.image} alt={p.name} className="aspect-square w-full object-cover" loading="lazy" />
+                      <div className="p-3">
+                        <p className="truncate text-sm font-semibold">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">{p.price}</p>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+                <StepNav onBack={goPrev} onNext={goNext} nextLabel="Continue" />
+              </section>
+            )}
+
+            {/* STEP 2 — Options */}
+            {step === 2 && showOptions && (
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
+                <PreviewPanel c={c} />
+                <div>
+                  <OptionsPicker
+                    productId={c.productId}
+                    options={c.options}
+                    onChange={(options) => setC((s) => ({ ...s, options, photos: [] }))}
+                  />
+                  <StepNav
+                    onBack={goPrev}
+                    onNext={goNext}
+                    nextDisabled={!canAdvanceFromOptions}
+                    nextLabel={canAdvanceFromOptions ? "Continue to upload" : "Pick an option to continue"}
                   />
                 </div>
-              </div>
-            </div>
+              </section>
+            )}
 
-            <div className="space-y-6">
-              <Section title="Upload your photo">
-                <PhotoUpload value={c.photoDataUrl} onChange={onPhoto} onClear={() => setC((s) => ({ ...s, photoDataUrl: null }))} />
-              </Section>
+            {/* STEP 3 — Upload + Live preview */}
+            {step === 3 && (
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
+                <div className="space-y-6">
+                  <MultiPhotoUpload
+                    photos={c.photos}
+                    required={required}
+                    max={required ?? undefined}
+                    onChange={(photos) => setC((s) => ({ ...s, photos }))}
+                    label="Upload your photos"
+                  />
 
-              <Section title="Personal touch">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Names or title">
-                    <input
-                      value={c.title}
-                      onChange={(e) => setC((s) => ({ ...s, title: e.target.value }))}
-                      placeholder="e.g. Riya & Arjun"
-                      className="input"
-                      maxLength={40}
-                    />
-                  </Field>
-                  <Field label="Date">
-                    <input
-                      value={c.date}
-                      onChange={(e) => setC((s) => ({ ...s, date: e.target.value }))}
-                      placeholder="e.g. 14 Feb 2024"
-                      className="input"
-                      maxLength={30}
-                    />
-                  </Field>
-                  <Field label="Quote or message" full>
-                    <textarea
-                      value={c.subtitle}
-                      onChange={(e) => setC((s) => ({ ...s, subtitle: e.target.value }))}
-                      placeholder="Something meaningful…"
-                      rows={2}
-                      maxLength={120}
-                      className="input resize-none"
-                    />
-                  </Field>
-                  <Field label="Quantity">
-                    <input
-                      type="number"
-                      min={1}
-                      max={500}
-                      value={c.quantity}
-                      onChange={(e) => setC((s) => ({ ...s, quantity: Math.max(1, Math.min(500, Number(e.target.value) || 1)) }))}
-                      className="input w-32"
-                    />
-                  </Field>
+                  <Section title="Personal touch (optional)">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Names or title">
+                        <input value={c.title} onChange={(e) => setC((s) => ({ ...s, title: e.target.value }))} placeholder="e.g. Riya & Arjun" className="input" maxLength={40} />
+                      </Field>
+                      <Field label="Date">
+                        <input value={c.date} onChange={(e) => setC((s) => ({ ...s, date: e.target.value }))} placeholder="14 Feb 2026" className="input" maxLength={30} />
+                      </Field>
+                      <Field label="Quote or message" full>
+                        <textarea value={c.subtitle} onChange={(e) => setC((s) => ({ ...s, subtitle: e.target.value }))} rows={2} placeholder="Something meaningful…" maxLength={120} className="input resize-none" />
+                      </Field>
+                      <Field label="Quantity">
+                        <input
+                          type="number"
+                          min={1}
+                          max={500}
+                          value={c.quantity}
+                          onChange={(e) => setC((s) => ({ ...s, quantity: Math.max(1, Math.min(500, Number(e.target.value) || 1)) }))}
+                          className="input w-32"
+                        />
+                      </Field>
+                    </div>
+                  </Section>
+
+                  <StepNav
+                    onBack={goPrev}
+                    onNext={goNext}
+                    nextDisabled={!photosComplete}
+                    nextLabel={photosComplete ? "Review preview" : `Add ${required ?? ""} photos to continue`}
+                  />
                 </div>
-              </Section>
 
-              <Section title="Save your design">
-                <Field label="Design name (optional)">
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Anniversary frame for Riya" className="input" maxLength={60} />
-                </Field>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button onClick={saveDesign} className="btn-ghost">
-                    <Save className="h-4 w-4" aria-hidden="true" /> {designParam ? "Update saved design" : "Save design"}
-                  </button>
+                <div className="sticky top-24 self-start">
+                  <div className="card-soft overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Sparkles className="h-4 w-4 text-accent" aria-hidden="true" /> Live preview
+                      </div>
+                      <span className="text-xs text-muted-foreground">{product.name}</span>
+                    </div>
+                    <div className="p-4 md:p-6">
+                      <ProductPreview c={c} />
+                    </div>
+                  </div>
                 </div>
-                {!user && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    <Link to="/auth" className="underline">Sign in</Link> to save designs and access them across devices.
+              </section>
+            )}
+
+            {/* STEP 4 — Preview & summary */}
+            {step === 4 && (
+              <section className="mt-8 grid gap-8 md:grid-cols-2">
+                <PreviewPanel c={c} />
+                <div className="space-y-4">
+                  <div className="card-soft p-6">
+                    <h2 className="text-base font-semibold">Order summary</h2>
+                    <dl className="mt-4 space-y-2 text-sm">
+                      <Row k="Product" v={product.name} />
+                      {occasion && <Row k="Occasion" v={occasion.label} />}
+                      {summarizeOptions(c.productId, c.options).map((line) => (
+                        <Row key={line} k="Detail" v={line} />
+                      ))}
+                      <Row k="Photos" v={`${c.photos.length}${required ? ` / ${required}` : ""}`} />
+                      {c.title && <Row k="Title" v={c.title} />}
+                      {c.date && <Row k="Date" v={c.date} />}
+                      {c.subtitle && <Row k="Message" v={c.subtitle} />}
+                      <Row k="Quantity" v={String(c.quantity)} />
+                      <Row k="Estimated price" v={priceStr} />
+                    </dl>
+                  </div>
+
+                  <Section title="Save your design">
+                    <Field label="Design name (optional)">
+                      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Anniversary frame for Riya" className="input" maxLength={60} />
+                    </Field>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button onClick={saveDesign} className="btn-ghost">
+                        <Save className="h-4 w-4" aria-hidden="true" /> {designParam ? "Update saved" : "Save design"}
+                      </button>
+                      <button onClick={handleAddToCart} className="btn-cta">
+                        <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Add to cart
+                      </button>
+                    </div>
+                  </Section>
+
+                  <StepNav onBack={goPrev} onNext={goNext} nextLabel="Continue to order" />
+                </div>
+              </section>
+            )}
+
+            {/* STEP 5 — Order */}
+            {step === 5 && (
+              <section className="mt-8 mx-auto max-w-2xl">
+                <div className="card-soft p-8 text-center">
+                  <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent">
+                    <MessageCircle className="h-6 w-6" aria-hidden="true" />
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold">Place your order on WhatsApp</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    We'll confirm details, share a final proof, and start printing once you approve.
                   </p>
-                )}
-              </Section>
-
-              <StepNav onBack={prev} onNext={next} nextLabel="Review preview" />
-            </div>
-          </section>
-        )}
-
-        {/* STEP 3 — Preview */}
-        {step === 3 && (
-          <section className="mt-8 grid gap-8 lg:grid-cols-[1.05fr_1fr]">
-            <div className="card-soft overflow-hidden">
-              <div className="border-b border-border bg-secondary/40 px-5 py-3 text-sm">
-                Final preview — this is exactly what we'll print.
-              </div>
-              <div className="p-4 md:p-6">
-                <LiveMockup
-                  product={product}
-                  photoDataUrl={c.photoDataUrl}
-                  state={c.mockup}
-                  onChange={(m) => setC((s) => ({ ...s, mockup: m }))}
-                  text={c.title}
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="card-soft p-6">
-                <h2 className="text-base font-semibold">Order summary</h2>
-                <dl className="mt-4 space-y-2 text-sm">
-                  <Row k="Product" v={product.name} />
-                  {occasion && <Row k="Occasion" v={occasion.label} />}
-                  {c.title && <Row k="Title" v={c.title} />}
-                  {c.date && <Row k="Date" v={c.date} />}
-                  {c.subtitle && <Row k="Message" v={c.subtitle} />}
-                  <Row k="Quantity" v={String(c.quantity)} />
-                  <Row k="Estimated price" v={product.price} />
-                </dl>
-              </div>
-              <StepNav onBack={prev} onNext={next} nextLabel="Continue to order" />
-            </div>
-          </section>
-        )}
-
-        {/* STEP 4 — Checkout (WhatsApp) */}
-        {step === 4 && (
-          <section className="mt-8 mx-auto max-w-2xl">
-            <div className="card-soft p-8 text-center">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent">
-                <MessageCircle className="h-6 w-6" aria-hidden="true" />
-              </div>
-              <h2 className="mt-4 text-2xl font-semibold">Place your order on WhatsApp</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                We'll confirm details, share a final proof, and start printing once you approve.
-              </p>
-              <div className="mt-6 flex flex-col items-center gap-3">
-                <a
-                  href={whatsappOrderUrl(orderMessage())}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-cta"
-                >
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" /> Order on WhatsApp
-                </a>
-                <button onClick={saveDesign} className="btn-ghost">
-                  <Save className="h-4 w-4" aria-hidden="true" /> Save & order later
-                </button>
-              </div>
-              <p className="mt-6 text-xs text-muted-foreground">
-                Total estimated: <span className="font-medium text-foreground">{product.price} × {c.quantity}</span>
-              </p>
-            </div>
-            <div className="mt-4 text-center">
-              <button onClick={prev} className="text-sm text-muted-foreground hover:text-foreground">
-                ← Back to preview
-              </button>
-            </div>
-          </section>
-        )}
+                  <div className="mt-6 flex flex-col items-center gap-3">
+                    <a href={whatsappOrderUrl(orderMessage())} target="_blank" rel="noreferrer" className="btn-cta">
+                      <MessageCircle className="h-4 w-4" aria-hidden="true" /> Order on WhatsApp
+                    </a>
+                    <button onClick={handleAddToCart} className="btn-ghost">
+                      <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Add to cart instead
+                    </button>
+                  </div>
+                  <p className="mt-6 text-xs text-muted-foreground">
+                    Total estimated: <span className="font-medium text-foreground">{priceStr}</span>
+                  </p>
+                </div>
+                <div className="mt-4 text-center">
+                  <button onClick={goPrev} className="text-sm text-muted-foreground hover:text-foreground">← Back to preview</button>
+                </div>
+              </section>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
       <SiteFooter />
+
+      <SuccessModal
+        open={success === "cart"}
+        onClose={() => setSuccess(null)}
+        title="Added to your cart!"
+        description="Your customization is saved. You can keep shopping or check out on WhatsApp."
+      >
+        <Link to="/cart" className="btn-cta">
+          <ShoppingBag className="h-4 w-4" aria-hidden="true" /> View cart
+        </Link>
+        <button onClick={() => setSuccess(null)} className="btn-ghost">Keep customizing</button>
+      </SuccessModal>
+
+      <SuccessModal
+        open={success === "save"}
+        onClose={() => setSuccess(null)}
+        title="Design saved"
+        description="Find it anytime under My Designs."
+      >
+        <Link to="/designs" className="btn-cta"><Heart className="h-4 w-4" aria-hidden="true" /> View saved designs</Link>
+        <button onClick={() => setSuccess(null)} className="btn-ghost">Close</button>
+      </SuccessModal>
 
       <style>{`
         .input {
@@ -436,93 +468,63 @@ function Customize() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function PreviewPanel({ c }: { c: Customization }) {
+  const product = PRODUCTS.find((p) => p.id === c.productId)!;
   return (
-    <section className="card-soft p-6">
-      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
-
-function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
-  return (
-    <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function StepNav({ onBack, onNext, nextLabel }: { onBack?: () => void; onNext?: () => void; nextLabel?: string }) {
-  return (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-      {onBack ? (
-        <button onClick={onBack} className="btn-ghost">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back
-        </button>
-      ) : <span />}
-      {onNext && (
-        <button onClick={onNext} className="btn-cta">
-          {nextLabel ?? "Continue"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-2 last:border-b-0">
-      <dt className="text-muted-foreground">{k}</dt>
-      <dd className="text-right font-medium">{v}</dd>
-    </div>
-  );
-}
-
-function PhotoUpload({ value, onChange, onClear }: { value: string | null; onChange: (f: File) => void; onClear: () => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-  return (
-    <div>
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault(); setDrag(false);
-          const f = e.dataTransfer.files?.[0]; if (f) onChange(f);
-        }}
-        className={`relative grid place-items-center rounded-2xl border-2 border-dashed p-6 text-center transition ${drag ? "border-accent bg-accent/5" : "border-border bg-secondary/40"}`}
-      >
-        {value ? (
-          <div className="flex w-full items-center gap-4">
-            <img src={value} alt="Your uploaded design" className="h-20 w-20 rounded-xl object-cover" />
-            <div className="flex-1 text-left">
-              <p className="text-sm font-medium">Photo ready</p>
-              <p className="text-xs text-muted-foreground">Drag it on the preview to position.</p>
-            </div>
-            <button onClick={onClear} className="text-sm text-muted-foreground hover:text-destructive">Replace</button>
-          </div>
-        ) : (
-          <>
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent/10 text-accent" aria-hidden="true">
-              <Upload className="h-5 w-5" />
-            </span>
-            <p className="mt-3 text-sm font-medium">Drop a photo here or tap to upload</p>
-            <p className="text-xs text-muted-foreground">JPG or PNG · up to 6MB</p>
-            <button onClick={() => inputRef.current?.click()} className="btn-ghost mt-4 !py-2 text-sm">Choose photo</button>
-          </>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(f); }}
-        />
+    <div className="card-soft overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Sparkles className="h-4 w-4 text-accent" aria-hidden="true" /> Live preview
+        </div>
+        <span className="text-xs text-muted-foreground">{product.name}</span>
+      </div>
+      <div className="p-4 md:p-6">
+        <ProductPreview c={c} />
       </div>
     </div>
   );
 }
 
-export type { Customization };
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card-soft p-5 md:p-6">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+  return (
+    <label className={`block text-sm ${full ? "sm:col-span-2" : ""}`}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="mt-1">{children}</div>
+    </label>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-muted-foreground">{k}</dt>
+      <dd className="font-medium text-right">{v}</dd>
+    </div>
+  );
+}
+
+function StepNav({ onBack, onNext, nextLabel = "Next", nextDisabled }: { onBack?: () => void; onNext?: () => void; nextLabel?: string; nextDisabled?: boolean }) {
+  return (
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+      {onBack ? (
+        <button onClick={onBack} className="btn-ghost"><ArrowLeft className="h-4 w-4" /> Back</button>
+      ) : (
+        <span />
+      )}
+      {onNext && (
+        <button onClick={onNext} disabled={nextDisabled} className="btn-cta disabled:cursor-not-allowed disabled:opacity-50">
+          {nextLabel} <ArrowRight className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
