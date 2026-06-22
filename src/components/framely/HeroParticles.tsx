@@ -1,8 +1,12 @@
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-/** Decorative floating particles for the hero. Pure CSS via framer-motion loops. */
+/** Decorative floating particles for the hero. Client-only to avoid SSR
+ *  hydration mismatch from Math.random() seeds. */
 export function HeroParticles({ count = 14 }: { count?: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const seeds = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({
@@ -15,6 +19,8 @@ export function HeroParticles({ count = 14 }: { count?: number }) {
       })),
     [count],
   );
+
+  if (!mounted) return null;
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
