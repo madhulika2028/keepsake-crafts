@@ -1,18 +1,29 @@
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useRef, type ReactNode, type MouseEvent } from "react";
 
-type Props = {
+type CommonProps = {
   children: ReactNode;
   className?: string;
-  onClick?: () => void;
-  as?: "button" | "a";
-  href?: string;
   "aria-label"?: string;
-  type?: "button" | "submit";
 };
 
-/** Cursor-following button with subtle magnetism and click squish. */
-export function MagneticButton({ children, className = "", onClick, as = "button", href, ...rest }: Props) {
+type ButtonProps = CommonProps & {
+  as?: "button";
+  onClick?: () => void;
+  type?: "button" | "submit";
+};
+type AnchorProps = CommonProps & {
+  as: "a";
+  href: string;
+  target?: string;
+  rel?: string;
+  onClick?: () => void;
+};
+
+type Props = ButtonProps | AnchorProps;
+
+/** Cursor-following button/link with subtle magnetism and click squish. */
+export function MagneticButton(props: Props) {
   const ref = useRef<HTMLElement | null>(null);
   const x = useSpring(useMotionValue(0), { stiffness: 200, damping: 18 });
   const y = useSpring(useMotionValue(0), { stiffness: 200, damping: 18 });
@@ -21,30 +32,49 @@ export function MagneticButton({ children, className = "", onClick, as = "button
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const mx = e.clientX - rect.left - rect.width / 2;
-    const my = e.clientY - rect.top - rect.height / 2;
-    x.set(mx * 0.25);
-    y.set(my * 0.25);
+    x.set((e.clientX - rect.left - rect.width / 2) * 0.25);
+    y.set((e.clientY - rect.top - rect.height / 2) * 0.25);
   };
   const handleLeave = () => {
     x.set(0);
     y.set(0);
   };
 
-  const Comp: typeof motion.button = as === "a" ? (motion.a as never) : motion.button;
+  if (props.as === "a") {
+    const { children, className, href, target, rel, onClick, ...rest } = props;
+    return (
+      <motion.a
+        ref={ref as React.RefObject<HTMLAnchorElement>}
+        href={href}
+        target={target}
+        rel={rel}
+        onClick={onClick}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+        whileTap={{ scale: 0.97 }}
+        style={{ x, y }}
+        className={className}
+        aria-label={rest["aria-label"]}
+      >
+        {children}
+      </motion.a>
+    );
+  }
+
+  const { children, className, onClick, type = "button", ...rest } = props;
   return (
-    <Comp
-      ref={ref as never}
-      href={href}
+    <motion.button
+      ref={ref as React.RefObject<HTMLButtonElement>}
+      type={type}
       onClick={onClick}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       whileTap={{ scale: 0.97 }}
       style={{ x, y }}
       className={className}
-      {...rest}
+      aria-label={rest["aria-label"]}
     >
       {children}
-    </Comp>
+    </motion.button>
   );
 }
