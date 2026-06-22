@@ -61,7 +61,12 @@ function Customize() {
   }, [productParam, occasionParam]);
 
   const [c, setC] = useState<Customization>(initial);
-  const [step, setStep] = useState(productParam ? 2 : 0);
+  // Determine the initial step from URL: product param skips to options (if any) or upload.
+  const initialStep = productParam
+    ? (hasOptionsStep(productParam) ? 2 : 3)
+    : occasionParam ? 1 : 0;
+  const [step, setStep] = useState(initialStep);
+
   const [name, setName] = useState("");
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loadingDesign, setLoadingDesign] = useState(!!designParam);
@@ -74,9 +79,9 @@ function Customize() {
   const photosComplete = required != null && c.photos.length === required;
   const priceStr = priceFor(c.productId, c.options, c.quantity);
 
-  // Restore draft / auth
+  // Restore draft / auth — only when no URL params are pre-selecting a product.
   useEffect(() => {
-    if (designParam) return;
+    if (designParam || productParam) return;
     try {
       const raw = sessionStorage.getItem("framely:draft");
       if (raw) {
@@ -89,6 +94,7 @@ function Customize() {
   useEffect(() => {
     try { sessionStorage.setItem("framely:draft", JSON.stringify(c)); } catch { /* ignore */ }
   }, [c]);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) =>
