@@ -41,12 +41,13 @@ function Stage({ children, ratio = "aspect-[4/5]" }: { children: React.ReactNode
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`relative ${ratio} w-full overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-beige to-card shadow-soft`}
+      className={`relative mx-auto w-full max-w-[420px] ${ratio} overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-beige to-card shadow-soft`}
     >
       {children}
     </motion.div>
   );
 }
+
 
 function Placeholder({ index }: { index: number }) {
   return (
