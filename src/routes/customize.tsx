@@ -14,7 +14,7 @@ import {
   priceFor,
   type Customization,
 } from "@/lib/customization-rules";
-import { addToCart } from "@/lib/store";
+import { addToCart, pushRecent } from "@/lib/store";
 import { SiteHeader } from "@/components/framely/SiteHeader";
 import { SiteFooter } from "@/components/framely/SiteFooter";
 import { OccasionCard } from "@/components/framely/OccasionCard";
