@@ -14,7 +14,7 @@ export function FloatingCheckout() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: "spring", stiffness: 220, damping: 22 }}
-          className="fixed bottom-5 right-5 z-40 hidden md:block"
+          className="fixed bottom-5 right-5 z-40"
         >
           <Link
             to="/cart"

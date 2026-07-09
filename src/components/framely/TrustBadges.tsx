@@ -8,9 +8,9 @@ export function TrustBadges() {
         {TRUST_BADGES.map((b, i) => (
           <Reveal key={b.title} delay={i * 60}>
             <div className="flex h-full items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift md:p-5">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-2xl" aria-hidden="true">
-                {b.icon}
-              </div>
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent" aria-hidden="true">
+     <b.icon className="h-5 w-5" />
+   </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold leading-tight">{b.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{b.copy}</p>

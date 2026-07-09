@@ -326,7 +326,9 @@ function Why() {
         {REASONS.map((r, i) => (
           <Reveal key={r.title} delay={i * 50}>
             <div className="card-soft hover-lift h-full p-6">
-              <div className="text-2xl" aria-hidden="true">{r.icon}</div>
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent" aria-hidden="true">
+     <r.icon className="h-5 w-5" />
+   </div>
               <h3 className="mt-4 text-base font-semibold">{r.title}</h3>
               <p className="mt-1.5 text-sm text-muted-foreground">{r.copy}</p>
             </div>

@@ -1,3 +1,6 @@
+import { Cake, Heart, Building2, Shirt, Sparkles, Home, HandHeart, Gift,
+            Upload, Eye, Palette, PenLine, Truck, Smartphone, Save,
+            Lock, MessageCircle, type LucideIcon } from "lucide-react";
 import frame from "@/assets/product-frame.jpg";
 import mug from "@/assets/product-mug.jpg";
 import polaroid from "@/assets/product-polaroid.jpg";
@@ -39,30 +42,29 @@ export const PRODUCTS: FramelyProduct[] = [
   { id: "gift-box", name: "Personalized Gift Box", tagline: "A surprise wrapped with care", description: "Curated gift box with your chosen keepsakes and a handwritten note.", image: giftbox, price: "₹1,199", badge: "For Couples", category: "gifting", printArea: { x: 20, y: 22, w: 60, h: 56 }, physicalSize: { w: 9, h: 7, unit: "in" } },
 ];
 
-export type FramelyOccasion = { id: string; label: string; subtitle: string; icon: string; gradient: string };
+export type FramelyOccasion = { id: string; label: string; subtitle: string; icon: LucideIcon; gradient: string };
 
 export const OCCASIONS: FramelyOccasion[] = [
-  { id: "birthday", label: "Birthday", subtitle: "Make their day unforgettable", icon: "🎂", gradient: "from-rose/40 to-beige" },
-  { id: "anniversary", label: "Anniversary", subtitle: "Celebrate years of love", icon: "💍", gradient: "from-accent/25 to-beige" },
-  { id: "corporate", label: "Corporate Events", subtitle: "Branded gifts that wow", icon: "🏢", gradient: "from-charcoal/15 to-beige" },
-  { id: "team", label: "Team Outings", subtitle: "Custom merch for the crew", icon: "🎽", gradient: "from-rose/30 to-beige" },
-  { id: "festivals", label: "Festivals", subtitle: "Diwali, Rakhi & more", icon: "✨", gradient: "from-accent/30 to-beige" },
-  { id: "family", label: "Family Events", subtitle: "Frame the people you love", icon: "🏡", gradient: "from-beige to-card" },
-  { id: "friends", label: "Friends Reunion", subtitle: "Throwbacks worth keeping", icon: "🤍", gradient: "from-rose/25 to-beige" },
-  { id: "custom", label: "Custom Occasion", subtitle: "Tell us your moment", icon: "🎁", gradient: "from-accent/20 to-beige" },
-];
+     { id: "birthday", label: "Birthday", subtitle: "Make their day unforgettable", icon: Cake, gradient: "from-rose/40 to-beige" },
+     { id: "anniversary", label: "Anniversary", subtitle: "Celebrate years of love", icon: Heart, gradient: "from-accent/25 to-beige" },
+     { id: "corporate", label: "Corporate Events", subtitle: "Branded gifts that wow", icon: Building2, gradient: "from-charcoal/15 to-beige" },
+     { id: "team", label: "Team Outings", subtitle: "Custom merch for the crew", icon: Shirt, gradient: "from-rose/30 to-beige" },
+     { id: "festivals", label: "Festivals", subtitle: "Diwali, Rakhi & more", icon: Sparkles, gradient: "from-accent/30 to-beige" },
+     { id: "family", label: "Family Events", subtitle: "Frame the people you love", icon: Home, gradient: "from-beige to-card" },
+     { id: "friends", label: "Friends Reunion", subtitle: "Throwbacks worth keeping", icon: HandHeart, gradient: "from-rose/25 to-beige" },
+     { id: "custom", label: "Custom Occasion", subtitle: "Tell us your moment", icon: Gift, gradient: "from-accent/20 to-beige" },
+   ];
 
 export const REASONS = [
-  { icon: "📤", title: "Easy photo upload", copy: "Drop your photos straight from your phone." },
-  { icon: "👀", title: "Live preview", copy: "See exactly how it will look before you order." },
-  { icon: "🎨", title: "Aesthetic templates", copy: "Curated layouts crafted by designers." },
-  { icon: "✍️", title: "Fully personalized", copy: "Add names, dates, quotes and inside jokes." },
-  { icon: "✨", title: "Premium printing", copy: "Rich colors, sharp detail, beautiful finishes." },
-  { icon: "🚚", title: "Fast & simple ordering", copy: "Order on WhatsApp in under a minute." },
-  { icon: "📱", title: "Mobile-friendly", copy: "Designed to be customized from your phone." },
-  { icon: "💾", title: "Save designs", copy: "Sign in to save designs and edit anytime." },
-];
-
+     { icon: Upload, title: "Easy photo upload", copy: "Drop your photos straight from your phone." },
+     { icon: Eye, title: "Live preview", copy: "See exactly how it will look before you order." },
+     { icon: Palette, title: "Aesthetic templates", copy: "Curated layouts crafted by designers." },
+     { icon: PenLine, title: "Fully personalized", copy: "Add names, dates, quotes and inside jokes." },
+     { icon: Sparkles, title: "Premium printing", copy: "Rich colors, sharp detail, beautiful finishes." },
+     { icon: Truck, title: "Fast & simple ordering", copy: "Order on WhatsApp in under a minute." },
+     { icon: Smartphone, title: "Mobile-friendly", copy: "Designed to be customized from your phone." },
+     { icon: Save, title: "Save designs", copy: "Sign in to save designs and edit anytime." },
+   ];
 export const AUDIENCES = [
   { label: "Students & Young Adults", copy: "Trendy polaroids, photo strips, custom merch." },
   { label: "Couples", copy: "Romantic frames, mugs and memory books." },
@@ -88,11 +90,11 @@ export const FAQS = [
 ];
 
 export const TRUST_BADGES = [
-  { icon: "🔒", title: "Secure Payments", copy: "UPI, cards & WhatsApp checkout." },
-  { icon: "🚚", title: "Fast Delivery", copy: "Shipped in 3–5 business days." },
-  { icon: "✨", title: "Quality Guarantee", copy: "Re-print on any defect, free." },
-  { icon: "💬", title: "Real Support", copy: "Chat with a human on WhatsApp." },
-];
+     { icon: Lock, title: "Secure Payments", copy: "UPI, cards & WhatsApp checkout." },
+     { icon: Truck, title: "Fast Delivery", copy: "Shipped in 3–5 business days." },
+     { icon: Sparkles, title: "Quality Guarantee", copy: "Re-print on any defect, free." },
+     { icon: MessageCircle, title: "Real Support", copy: "Chat with a human on WhatsApp." },
+   ];
 
 export function whatsappOrderUrl(message: string) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;

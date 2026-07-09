@@ -26,8 +26,8 @@ export function OccasionCard({
         aria-hidden="true"
       />
       <div className="grid h-12 w-12 place-items-center rounded-2xl bg-background/80 text-2xl shadow-soft backdrop-blur">
-        <span aria-hidden="true">{occasion.icon}</span>
-      </div>
+     <occasion.icon className="h-6 w-6 text-charcoal" aria-hidden="true" />
+   </div>
       <div className="min-w-0">
         <h3 className="text-sm font-semibold leading-tight text-foreground sm:text-base">{occasion.label}</h3>
         <p className="mt-1 text-xs text-muted-foreground sm:text-[13px]">{occasion.subtitle}</p>
