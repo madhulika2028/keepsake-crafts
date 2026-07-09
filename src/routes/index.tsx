@@ -56,6 +56,7 @@ function Home() {
         <Hero />
         <TrustStrip />
         <Products />
+        <RecentlyViewed />
         <HowItWorks />
         <Why />
         <Occasions />
