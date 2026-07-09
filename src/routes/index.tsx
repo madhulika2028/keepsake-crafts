@@ -36,8 +36,8 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Framely — Personalized Gifts & Custom Printing in Tirupati" },
       { name: "description", content: "Turn your photos into personalized frames, mugs, polaroids, T-shirts and memory books. Live preview, premium printing, easy WhatsApp ordering. Made with love in Tirupati." },
-      { property: "og:title", content: "Framely — Memories You Can Hold" },
-      { property: "og:description", content: "Premium personalized gifting studio. Custom frames, mugs, polaroids, memory books and more." },
+      { property: "og:title", content: "Framely — Personalized Gifts & Custom Printing in Tirupati" },
+      { property: "og:description", content: "Turn your photos into personalized frames, mugs, polaroids, T-shirts and memory books. Live preview, premium printing, easy WhatsApp ordering. Made with love in Tirupati." },
       { property: "og:image", content: heroCollage },
       { name: "twitter:image", content: heroCollage },
     ],
