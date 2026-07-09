@@ -94,6 +94,7 @@ function Customize() {
   useEffect(() => {
     try { sessionStorage.setItem("framely:draft", JSON.stringify(c)); } catch { /* ignore */ }
   }, [c]);
+  useEffect(() => { pushRecent(c.productId); }, [c.productId]);
 
 
   useEffect(() => {
