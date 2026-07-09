@@ -209,9 +209,15 @@ function Products() {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold leading-tight">{p.name}</h3>
-                    <span className="text-sm font-semibold text-accent">{p.price}</span>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Starting at</p>
+                      <p className="text-sm font-semibold text-accent">{p.price}</p>
+                    </div>
                   </div>
                   <p className="mt-1.5 text-sm text-muted-foreground">{p.tagline}</p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
+                    <Sparkles className="h-3 w-3" aria-hidden="true" /> Ships in 3–5 days
+                  </p>
                   <Link
                     to="/customize"
                     search={{ product: p.id }}
