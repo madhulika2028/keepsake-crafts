@@ -56,6 +56,7 @@ function Home() {
         <Hero />
         <TrustStrip />
         <Products />
+        <RecentlyViewed />
         <HowItWorks />
         <Why />
         <Occasions />
@@ -209,9 +210,15 @@ function Products() {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold leading-tight">{p.name}</h3>
-                    <span className="text-sm font-semibold text-accent">{p.price}</span>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Starting at</p>
+                      <p className="text-sm font-semibold text-accent">{p.price}</p>
+                    </div>
                   </div>
                   <p className="mt-1.5 text-sm text-muted-foreground">{p.tagline}</p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
+                    <Sparkles className="h-3 w-3" aria-hidden="true" /> Ships in 3–5 days
+                  </p>
                   <Link
                     to="/customize"
                     search={{ product: p.id }}
@@ -228,6 +235,44 @@ function Products() {
     </section>
   );
 }
+
+function RecentlyViewed() {
+  const { recent } = useStoreSnapshot();
+  const items = recent
+    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .filter((p): p is (typeof PRODUCTS)[number] => Boolean(p));
+  if (items.length === 0) return null;
+  return (
+    <section aria-label="Recently viewed" className="container-page pb-4 pt-8 md:pt-12">
+      <div className="flex items-baseline justify-between gap-4">
+        <div>
+          <span className="eyebrow">Just for you</span>
+          <h2 className="mt-1 text-xl font-semibold md:text-2xl">Recently viewed</h2>
+        </div>
+        <Link to="/customize" className="text-sm font-medium text-accent hover:underline">Start new</Link>
+      </div>
+      <div className="mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 -mx-1 px-1">
+        {items.map((p) => (
+          <Link
+            key={p.id}
+            to="/customize"
+            search={{ product: p.id }}
+            className="group card-soft w-40 shrink-0 snap-start overflow-hidden sm:w-48"
+          >
+            <div className="aspect-square overflow-hidden bg-secondary">
+              <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            </div>
+            <div className="p-3">
+              <p className="truncate text-sm font-semibold">{p.name}</p>
+              <p className="text-xs text-accent">{p.price}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 
 
 function HowItWorks() {
@@ -416,9 +461,17 @@ function Testimonials() {
                 ))}
               </div>
               <blockquote className="mt-4 text-sm leading-relaxed text-foreground">"{t.quote}"</blockquote>
-              <figcaption className="mt-5 text-sm">
-                <span className="font-semibold">{t.name}</span>
-                <span className="text-muted-foreground"> · {t.role}</span>
+              <figcaption className="mt-5 flex items-center gap-3 text-sm">
+                <span
+                  aria-hidden="true"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent/30 to-rose/40 text-sm font-semibold text-foreground"
+                >
+                  {t.name.charAt(0)}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold leading-tight">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
               </figcaption>
             </figure>
           </Reveal>

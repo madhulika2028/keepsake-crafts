@@ -11,9 +11,35 @@ export function Stepper({
   current: number;
   onJump?: (index: number) => void;
 }) {
+  const pct = Math.round(((current + 1) / steps.length) * 100);
+  const currentLabel = steps[current]?.label;
   return (
     <nav aria-label="Progress" className="w-full">
-      <ol className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:gap-3">
+      {/* Mobile: compact step indicator + progress bar */}
+      <div className="sm:hidden">
+        <div className="flex items-baseline justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            Step {current + 1} of {steps.length}
+          </p>
+          <p className="text-xs text-muted-foreground">{pct}%</p>
+        </div>
+        <p className="mt-1 text-sm font-semibold text-foreground">{currentLabel}</p>
+        <div
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+        >
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Desktop: full chip stepper */}
+      <ol className="hidden w-full items-center gap-2 overflow-x-auto pb-1 sm:flex sm:gap-3">
         {steps.map((s, i) => {
           const isDone = i < current;
           const isActive = i === current;
