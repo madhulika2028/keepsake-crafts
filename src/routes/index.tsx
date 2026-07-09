@@ -81,7 +81,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden">
       <HeroParticles />
-      <div className="container-page relative grid items-center gap-8 pt-8 pb-12 md:grid-cols-2 md:gap-12 md:pt-16 md:pb-20">
+      <div className="container-page relative grid items-center gap-8 pt-6 pb-8 md:grid-cols-2 md:gap-10 md:pt-10 md:pb-12">
 
         <div className="animate-fade-up">
           <span className="eyebrow">Personalized Gifting Studio · Tirupati</span>
@@ -115,7 +115,7 @@ function Hero() {
 
         <div className="relative animate-fade-up" style={{ animationDelay: "120ms" }}>
           <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-rose/30 via-beige to-ivory blur-xl opacity-70" aria-hidden="true" />
-          <div className="relative overflow-hidden rounded-[2rem] border border-border shadow-soft animate-float aspect-[4/5] md:aspect-[5/6]">
+          <div className="relative max-h-[50vh] overflow-hidden rounded-[2rem] border border-border shadow-soft animate-float aspect-[4/5] md:aspect-[5/6]">
             <img
               src={heroCollage}
               alt="Premium flat-lay of personalized Framely gifts: wooden photo frame, polaroid prints, custom mug and memory book on cream linen."
@@ -176,9 +176,9 @@ function Products() {
               <motion.article
                 whileHover={{ y: -8 }}
                 transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                className="card-soft group overflow-hidden"
+                className="card-soft group flex h-full flex-col overflow-hidden"
               >
-                <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
+                <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
                   <img
                     src={p.image}
                     alt={`${p.name} — ${p.tagline}`}
@@ -207,22 +207,22 @@ function Products() {
                     <Heart className={`h-4 w-4 ${wished ? "fill-current" : ""}`} aria-hidden="true" />
                   </button>
                 </div>
-                <div className="p-5">
+                <div className="flex flex-1 flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-base font-semibold leading-tight">{p.name}</h3>
+                    <h3 className="line-clamp-2 min-h-[2.5rem] text-base font-semibold leading-tight">{p.name}</h3>
                     <div className="text-right shrink-0">
                       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Starting at</p>
                       <p className="text-sm font-semibold text-accent">{p.price}</p>
                     </div>
                   </div>
-                  <p className="mt-1.5 text-sm text-muted-foreground">{p.tagline}</p>
+                 <p className="mt-1.5 line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">{p.tagline}</p>
                   <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
                     <Sparkles className="h-3 w-3" aria-hidden="true" /> Ships in 3–5 days
                   </p>
                   <Link
                     to="/customize"
                     search={{ product: p.id }}
-                    className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
+                    className="mt-auto inline-flex min-h-11 items-center gap-1.5 pt-4 text-sm font-medium text-foreground transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-md"
                   >
                     Customize Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
