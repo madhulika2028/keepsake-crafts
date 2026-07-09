@@ -417,6 +417,11 @@ function Customize() {
                   <p className="mt-6 text-xs text-muted-foreground">
                     Total estimated: <span className="font-medium text-foreground">{priceStr}</span>
                   </p>
+                  <ul className="mt-6 grid gap-2 text-left text-xs text-muted-foreground sm:grid-cols-3">
+                    <li className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden="true" /> Free reprint on defects</li>
+                    <li className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden="true" /> Ships in 3–5 days</li>
+                    <li className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden="true" /> Your photos stay private</li>
+                  </ul>
                 </div>
                 <div className="mt-4 text-center">
                   <button onClick={goPrev} className="text-sm text-muted-foreground hover:text-foreground">← Back to preview</button>
