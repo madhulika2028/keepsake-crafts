@@ -422,9 +422,17 @@ function Testimonials() {
                 ))}
               </div>
               <blockquote className="mt-4 text-sm leading-relaxed text-foreground">"{t.quote}"</blockquote>
-              <figcaption className="mt-5 text-sm">
-                <span className="font-semibold">{t.name}</span>
-                <span className="text-muted-foreground"> · {t.role}</span>
+              <figcaption className="mt-5 flex items-center gap-3 text-sm">
+                <span
+                  aria-hidden="true"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent/30 to-rose/40 text-sm font-semibold text-foreground"
+                >
+                  {t.name.charAt(0)}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold leading-tight">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
               </figcaption>
             </figure>
           </Reveal>
