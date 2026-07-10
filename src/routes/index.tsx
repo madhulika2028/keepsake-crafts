@@ -8,6 +8,8 @@ import { TrustBadges } from "@/components/framely/TrustBadges";
 import { FAQ } from "@/components/framely/FAQ";
 import { HeroParticles } from "@/components/framely/HeroParticles";
 import { FloatingCheckout } from "@/components/framely/FloatingCheckout";
+
+import { useState, type FormEvent } from "react";
 import {
   PRODUCTS,
   OCCASIONS,
@@ -15,8 +17,10 @@ import {
   AUDIENCES,
   TESTIMONIALS,
   whatsappOrderUrl,
+  type FramelyProduct,
 } from "@/lib/framely-data";
 import { toggleWishlist, useStoreSnapshot } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import heroCollage from "@/assets/hero-collage.jpg";
 import {
@@ -29,6 +33,7 @@ import {
   Sparkles,
   Heart,
   Star,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -55,6 +60,7 @@ function Home() {
       <main>
         <Hero />
         <TrustStrip />
+        <AIRecommender />
         <Products />
         <RecentlyViewed />
         <HowItWorks />
@@ -153,6 +159,134 @@ function TrustStrip() {
         ))}
       </div>
     </div>
+  );
+}
+
+function AIRecommender() {
+  const [occasion, setOccasion] = useState("");
+  const [interests, setInterests] = useState("");
+  const [budget, setBudget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<{ product: FramelyProduct; reason: string }[] | null>(null);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!occasion || !interests) {
+      setError("Please fill in the occasion and their interests.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setResults(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("recommend-gifts", {
+        body: { occasion, recipientInterests: interests, budget: budget || undefined },
+      });
+      if (fnError) throw fnError;
+      const recs = (data?.recommendations ?? []) as { productId: string; reason: string }[];
+      const matched = recs
+        .map((r) => {
+          const product = PRODUCTS.find((p) => p.id === r.productId);
+          return product ? { product, reason: r.reason } : null;
+        })
+        .filter((x): x is { product: FramelyProduct; reason: string } => Boolean(x));
+      if (matched.length === 0) throw new Error("No matches returned.");
+      setResults(matched);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong getting suggestions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section id="ai-gift-finder" className="bg-secondary/40 py-20 md:py-28">
+      <div className="container-page">
+        <Reveal>
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="eyebrow">AI Gift Finder</span>
+            <h2 className="mt-3 text-3xl font-semibold md:text-5xl">Not sure what to get? Ask AI.</h2>
+            <p className="mt-4 text-muted-foreground">Tell us the occasion and who it's for — we'll suggest the perfect personalized gift.</p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <form onSubmit={handleSubmit} className="card-soft mx-auto mt-10 max-w-3xl p-6 md:p-8">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label htmlFor="ai-occasion" className="text-sm font-medium">Occasion</label>
+                <input
+                  id="ai-occasion"
+                  value={occasion}
+                  onChange={(e) => setOccasion(e.target.value)}
+                  placeholder="e.g. Anniversary"
+                  className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div>
+                <label htmlFor="ai-interests" className="text-sm font-medium">Their interests</label>
+                <input
+                  id="ai-interests"
+                  value={interests}
+                  onChange={(e) => setInterests(e.target.value)}
+                  placeholder="e.g. loves gardening, coffee"
+                  className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div>
+                <label htmlFor="ai-budget" className="text-sm font-medium">Budget (optional)</label>
+                <input
+                  id="ai-budget"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="e.g. under ₹800"
+                  className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+            </div>
+            <button type="submit" disabled={loading} className="btn-cta mt-6 w-full justify-center disabled:opacity-60">
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Thinking...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" aria-hidden="true" /> Get AI Suggestions
+                </>
+              )}
+            </button>
+            {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+          </form>
+        </Reveal>
+
+        {results && (
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {results.map(({ product, reason }, i) => (
+              <Reveal key={product.id} delay={i * 80}>
+                <div className="card-soft flex h-full flex-col overflow-hidden">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+                    <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="text-base font-semibold">{product.name}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground">{reason}</p>
+                    <Link
+                      to="/customize"
+                      search={{ product: product.id }}
+                      className="mt-auto inline-flex min-h-11 items-center gap-1.5 pt-4 text-sm font-medium text-foreground transition hover:text-accent"
+                    >
+                      Customize Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
