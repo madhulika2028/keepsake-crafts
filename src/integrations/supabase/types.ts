@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      recommendations_log: {
+        Row: {
+          ai_response: Json | null
+          budget: string | null
+          created_at: string
+          id: string
+          occasion: string | null
+          recipient_interests: string | null
+          returned_product_ids: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_response?: Json | null
+          budget?: string | null
+          created_at?: string
+          id?: string
+          occasion?: string | null
+          recipient_interests?: string | null
+          returned_product_ids?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_response?: Json | null
+          budget?: string | null
+          created_at?: string
+          id?: string
+          occasion?: string | null
+          recipient_interests?: string | null
+          returned_product_ids?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       saved_designs: {
         Row: {
           created_at: string
