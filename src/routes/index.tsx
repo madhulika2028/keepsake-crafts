@@ -87,7 +87,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden">
       <HeroParticles />
-      <div className="container-page relative grid items-center gap-8 pt-6 pb-8 md:grid-cols-2 md:gap-10 md:pt-10 md:pb-12">
+      <div className="container-page relative grid items-start gap-8 pt-6 pb-8 md:grid-cols-[1.5fr_1fr] md:gap-10 md:pt-10 md:pb-12 md:items-center">
 
         <div className="animate-fade-up">
           <span className="eyebrow">Personalized Gifting Studio · Tirupati</span>
@@ -119,31 +119,36 @@ function Hero() {
           </ul>
         </div>
 
-        <div className="relative animate-fade-up" style={{ animationDelay: "120ms" }}>
-          <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-rose/30 via-beige to-ivory blur-xl opacity-70" aria-hidden="true" />
-          <div className="relative max-h-[50vh] overflow-hidden rounded-[2rem] border border-border shadow-soft animate-float aspect-[4/5] md:aspect-[5/6]">
-            <img
-              src={heroCollage}
-              alt="Premium flat-lay of personalized Framely gifts: wooden photo frame, polaroid prints, custom mug and memory book on cream linen."
-              width={1536}
-              height={1280}
-              fetchPriority="high"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover object-[center_top] md:object-center"
-            />
-          </div>
-          <div className="absolute -bottom-5 -left-5 hidden rounded-2xl border border-border bg-card px-4 py-3 shadow-soft md:flex md:items-center md:gap-3">
-            <Heart className="h-5 w-5 text-accent" aria-hidden="true" />
-            <div className="text-sm">
-              <p className="font-semibold leading-tight">2,400+ memories</p>
-              <p className="text-muted-foreground">crafted and gifted</p>
-            </div>
-          </div>
-          <div className="absolute -top-4 right-4 hidden rounded-2xl border border-border bg-card px-4 py-2 shadow-soft md:flex md:items-center md:gap-2">
-            <Star className="h-4 w-4 fill-accent text-accent" aria-hidden="true" />
-            <span className="text-sm font-medium">4.9 / 5 · 850 reviews</span>
-          </div>
-        </div>
+        <div className="relative self-start md:-mt-4 animate-fade-up" style={{ animationDelay: "120ms" }}>
+  <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-rose/30 via-beige to-ivory blur-xl opacity-70" aria-hidden="true" />
+
+  <div className="mb-6 hidden justify-end md:flex md:mb-8">
+    <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-2 shadow-soft">
+      <Star className="h-4 w-4 fill-accent text-accent" aria-hidden="true" />
+      <span className="text-sm font-medium">4.9 / 5 · 850 reviews</span>
+    </div>
+  </div>
+  <div className="relative overflow-hidden rounded-3xl border border-border shadow-soft animate-float aspect-[4/3] max-h-[32vh] md:aspect-[4/5] md:max-h-[640px]">
+  
+    <img
+      src={heroCollage}
+      alt="Premium flat-lay of personalized Framely gifts: wooden photo frame, polaroid prints, custom mug and memory book on cream linen."
+      width={1536}
+      height={1280}
+      fetchPriority="high"
+      decoding="async"
+      className="absolute inset-0 h-full w-full object-cover object-[center_top] md:object-center"
+    />
+  </div>
+
+  <div className="absolute -bottom-5 -left-5 hidden rounded-2xl border border-border bg-card px-4 py-3 shadow-soft md:flex md:items-center md:gap-3">
+    <Heart className="h-5 w-5 text-accent" aria-hidden="true" />
+    <div className="text-sm">
+      <p className="font-semibold leading-tight">2,400+ memories</p>
+      <p className="text-muted-foreground">crafted and gifted</p>
+    </div>
+  </div>
+</div>
       </div>
     </section>
   );
