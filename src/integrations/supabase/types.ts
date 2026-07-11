@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          created_at: string
+          customization_data: Json
+          id: string
+          product_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customization_data?: Json
+          id?: string
+          product_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customization_data?: Json
+          id?: string
+          product_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          badge: string | null
+          category: string
+          colors: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          physical_size: Json | null
+          price: string
+          print_area: Json | null
+          tagline: string | null
+        }
+        Insert: {
+          badge?: string | null
+          category: string
+          colors?: Json | null
+          created_at?: string
+          description?: string | null
+          id: string
+          image_url?: string | null
+          name: string
+          physical_size?: Json | null
+          price: string
+          print_area?: Json | null
+          tagline?: string | null
+        }
+        Update: {
+          badge?: string | null
+          category?: string
+          colors?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          physical_size?: Json | null
+          price?: string
+          print_area?: Json | null
+          tagline?: string | null
+        }
+        Relationships: []
+      }
       recommendations_log: {
         Row: {
           ai_response: Json | null
