@@ -189,10 +189,11 @@ function AIRecommender() {
         body: { occasion, recipientInterests: interests, budget: budget || undefined },
       });
       if (fnError) throw fnError;
-      const recs = (data?.recommendations ?? []) as { productId: string; reason: string }[];
+      const recs = (data?.recommendations ?? []) as { id?: string; productId?: string; reason: string }[];
       const matched = recs
         .map((r) => {
-          const product = PRODUCTS.find((p) => p.id === r.productId);
+          const pid = r.id ?? r.productId;
+          const product = PRODUCTS.find((p) => p.id === pid);
           return product ? { product, reason: r.reason } : null;
         })
         .filter((x): x is { product: FramelyProduct; reason: string } => Boolean(x));
